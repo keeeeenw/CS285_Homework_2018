@@ -104,7 +104,7 @@ def get_session():
     return session
 
 def get_env(task, seed):
-    env = gym.make('PongNoFrameskip-v4')
+    env = gym.make('BreakoutNoFrameskip-v4')
 
     set_global_seeds(seed)
     env.seed(seed)
@@ -117,7 +117,7 @@ def get_env(task, seed):
 
 def main():
     # Get Atari games.
-    task = gym.make('PongNoFrameskip-v4')
+    task = gym.make('BreakoutNoFrameskip-v4')
 
     # Run training
     seed = random.randint(0, 9999)

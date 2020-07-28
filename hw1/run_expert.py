@@ -24,6 +24,8 @@ import gym
 import tf_util
 import load_policy
 
+import model
+
 
 EXPERT_DIR = "experts"
 ROBOSCOOL_EXPERT_DATA_DIR = 'hw1/expert_data'
@@ -77,7 +79,7 @@ def run_mojoco_policy(expert_policy_file, num_rollouts, envname, max_timesteps=N
         return expert_data
 
 
-def run_policy(env, policy, num_rollouts, description, max_timesteps=None, render=False, verbose=True):
+def run_policy(env, policy, num_rollouts, description, envname, max_timesteps=None, render=False, verbose=True):
     max_steps = max_timesteps or env.spec.timestep_limit
 
     returns = []
@@ -113,7 +115,46 @@ def run_policy(env, policy, num_rollouts, description, max_timesteps=None, rende
     expert_data = {'observations': np.array(observations),
                    'actions': np.array(actions),
                    'returns': np.array(returns)}
-    return expert_data
+
+    our_model = model.Model(expert_data['observations'], expert_data['actions'], envname, "behavior_cloning")
+    our_model.train(epochs = 20)
+
+    returns = []
+    observations = []
+    actions = []
+    num_iterations = 100
+    for i in range(num_iterations):
+
+        obs = env.reset()
+        done = False
+        totalr = 0.0
+        steps = 0
+
+        while not done and steps < max_steps:
+            action = our_model.sample(obs)
+            observations.append(obs)
+            actions.append(action)
+            
+            obs, r, done, _ = env.step(action)
+            totalr += r
+            steps += 1
+            env.render()
+            # if steps % 100 == 0:
+            #     print("%i/%i"%(steps, max_steps))
+        returns.append(totalr)
+
+        if i % 10 == 0:
+            # env.render()
+            print("%i/%i"%(i, num_iterations))
+            # print('Env description:', description)
+            print('total reward', totalr)
+            print('mean return', np.mean(returns))
+            print('std of return', np.std(returns))
+
+    our_data = {'observations': np.array(observations),
+                   'actions': np.array(actions),
+                   'returns': np.array(returns)}
+    return our_data
 
 
 def run_expert_policy(num_rollouts, envname, max_timesteps=None, render=False, verbose=True):
@@ -124,7 +165,7 @@ def run_expert_policy(num_rollouts, envname, max_timesteps=None, render=False, v
 
     env, policy = policy_module.get_env_and_policy()
     description = "Expert policy for module %s" % envname
-    return run_policy(env=env, policy=policy, num_rollouts=num_rollouts, description=description,
+    return run_policy(env=env, policy=policy, num_rollouts=num_rollouts, description=description, envname=envname,
                              max_timesteps=max_timesteps, render=render, verbose=verbose)
 
 
@@ -158,3 +199,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+

@@ -105,7 +105,8 @@ def get_env(seed):
 
 def main():
     # Run training
-    seed = 4565 # you may want to randomize this
+    # seed = 4565 # you may want to randomize this
+    seed = random.randint(0, 9999)
     print('random seed = %d' % seed)
     env = get_env(seed)
     session = get_session()
